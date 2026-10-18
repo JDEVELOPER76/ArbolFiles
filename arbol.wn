@@ -1,0 +1,90 @@
+importar "modulos/system/sistem" como sys
+importar "modulos/orden/orden" como ord
+importar "modulos/ruta/ruta" como rt
+
+funcion listar_arbol(directorio:cadena,prefijo:cadena)-> cadena:
+    intentar:
+        lista<cadena> elementos = ord.cadenas(sys.list_archivos(directorio))
+        entero i = 0
+        cadena resultado = ""
+        cadena conector = ""
+        cadena extension_prefijo = ""
+        mientras i < longitud(elementos):
+            cadena nombre = elementos[i]
+            booleano es_ultimo = i == longitud(elementos) -1
+            si es_ultimo:
+                conector = "└──"
+            demas:
+                conector = "├──"
+            cadena ruta = rt.rut_unir(directorio, nombre)
+            resultado = resultado + c"{prefijo}{conector} {nombre}\n"
+            si sys.es_directorio(ruta):
+                si es_ultimo:
+                    extension_prefijo = "    "
+                demas:
+                    extension_prefijo = "│   "
+                resultado = resultado + listar_arbol(ruta, c"{prefijo}{extension_prefijo}")
+            i += 1
+        retornar resultado
+    capturar:
+        retornar ""
+
+funcion principal(argc:entero,argv:lista<cadena>) -> entero:
+    cadena directorio = ""
+    cadena archivo_salida = "arbol.txt"
+    booleano guardar = falso
+    booleano modo_version = falso
+    booleano modo_help = falso
+    
+    entero index = 0
+    mientras index < argc:
+        si argv[index] == "--dir":
+            si index + 1 < argc:
+                directorio = argv[index + 1]
+                index = index + 2
+            sino:
+                index = index + 1
+        sino si argv[index] == "--guardar" o argv[index] == "-o":
+            si index + 1 < argc:
+                archivo_salida = argv[index + 1]
+                guardar = verdadero
+                index = index + 2
+            sino:
+                guardar = verdadero
+                index = index + 1
+        sino si argv[index] == "--version":
+            modo_version = verdadero
+            index = index + 1
+        sino si argv[index] == "--help":
+            modo_help = verdadero
+            index = index + 1
+        sino:
+            index = index + 1
+    
+    si modo_version:
+        escribir("Arbol version 1.0")
+        escribir("Escrito con WiniLang")
+        retornar 0
+    
+    si modo_help:
+        escribir("Uso de Arbol : requiere un argumento [directorio]")
+        escribir("Ejemplo: Arbol --dir . <- carpeta actual")
+        escribir("Ejemplo: Arbol --dir PC:~/Escritorio <- ruta externa")
+        escribir("comandos: --dir [directorio], --guardar [archivo.txt], --version, --help")
+        retornar 0
+    
+    si directorio == "":
+        escribir("Uso de Arbol : requiere un argumento [directorio]")
+        escribir("Ejemplo: Arbol --dir .")
+        retornar 1
+    
+    cadena arbol_texto = listar_arbol(directorio, "")
+    escribir(arbol_texto)
+    
+    si guardar:
+        si sys.esc_archivo(archivo_salida, arbol_texto):
+            escribir(c"Guardado en: {archivo_salida}")
+        sino:
+            escribir("Error: no se pudo guardar en " + archivo_salida)
+    
+    retornar 0
